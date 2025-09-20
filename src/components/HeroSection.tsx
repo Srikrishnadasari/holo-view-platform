@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { ArrowRight, Users, GraduationCap, Building, UserCheck } from "lucide-react";
+import { ArrowRight, Users, GraduationCap, Building, UserCheck, LogIn, UserPlus, LogOut } from "lucide-react";
 import heroImage from "@/assets/hero-alumni-platform.jpg";
+import { useAuth } from "@/contexts/AuthContext";
+import { useNavigate } from "react-router-dom";
 
 const userRoles = [
   {
@@ -39,6 +41,8 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ onRoleSelect }: HeroSectionProps) {
+  const { user, signOut } = useAuth();
+  const navigate = useNavigate();
   return (
     <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
       {/* Animated Background Elements */}
@@ -50,6 +54,46 @@ export default function HeroSection({ onRoleSelect }: HeroSectionProps) {
       </div>
 
       <div className="container mx-auto px-4 py-16">
+        {/* Auth Navigation */}
+        <div className="flex justify-end mb-8">
+          {user ? (
+            <div className="flex items-center gap-4">
+              <span className="text-sm text-muted-foreground">
+                Welcome, {user.email}
+              </span>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={signOut}
+                className="flex items-center gap-2"
+              >
+                <LogOut className="h-4 w-4" />
+                Logout
+              </Button>
+            </div>
+          ) : (
+            <div className="flex items-center gap-3">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate('/auth')}
+                className="flex items-center gap-2"
+              >
+                <LogIn className="h-4 w-4" />
+                Login
+              </Button>
+              <Button
+                size="sm"
+                onClick={() => navigate('/auth')}
+                className="flex items-center gap-2"
+              >
+                <UserPlus className="h-4 w-4" />
+                Sign Up
+              </Button>
+            </div>
+          )}
+        </div>
+
         {/* Header */}
         <div className="text-center mb-16 animate-fade-in">
           <div className="inline-flex items-center gap-2 mb-6 px-4 py-2 glass-card rounded-full">
@@ -91,11 +135,12 @@ export default function HeroSection({ onRoleSelect }: HeroSectionProps) {
           </div>
         </div>
 
-        {/* Role Selection Cards */}
-        <div className="mb-16">
-          <h2 className="text-4xl font-bold text-center mb-12 font-heading">
-            Choose Your <span className="gradient-text">Role</span>
-          </h2>
+        {/* Role Selection Cards - Only show if authenticated */}
+        {user && (
+          <div className="mb-16">
+            <h2 className="text-4xl font-bold text-center mb-12 font-heading">
+              Choose Your <span className="gradient-text">Role</span>
+            </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {userRoles.map((role, index) => {
@@ -147,6 +192,7 @@ export default function HeroSection({ onRoleSelect }: HeroSectionProps) {
             })}
           </div>
         </div>
+        )}
 
         {/* Features Preview */}
         <div className="text-center">
