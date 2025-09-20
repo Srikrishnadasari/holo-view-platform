@@ -41,8 +41,41 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ onRoleSelect }: HeroSectionProps) {
-  const { user, signOut } = useAuth();
+  const { user, signOut, loading } = useAuth();
   const navigate = useNavigate();
+  
+  console.log('HeroSection render:', { user, loading });
+  
+  const handleLoginClick = () => {
+    console.log('Login button clicked - about to navigate');
+    try {
+      navigate('/auth');
+      console.log('Navigation completed');
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
+  };
+
+  const handleSignUpClick = () => {
+    console.log('Sign Up button clicked - about to navigate');
+    try {
+      navigate('/auth');
+      console.log('Navigation completed');  
+    } catch (error) {
+      console.error('Navigation error:', error);
+    }
+  };
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-hero flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-muted-foreground">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
       {/* Animated Background Elements */}
@@ -73,23 +106,23 @@ export default function HeroSection({ onRoleSelect }: HeroSectionProps) {
             </div>
           ) : (
             <div className="flex items-center gap-3">
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate('/auth')}
-                className="flex items-center gap-2"
-              >
-                <LogIn className="h-4 w-4" />
-                Login
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => navigate('/auth')}
-                className="flex items-center gap-2"
-              >
-                <UserPlus className="h-4 w-4" />
-                Sign Up
-              </Button>
+               <Button
+                 variant="ghost"
+                 size="sm"
+                 onClick={handleLoginClick}
+                 className="flex items-center gap-2"
+               >
+                 <LogIn className="h-4 w-4" />
+                 Login
+               </Button>
+               <Button
+                 size="sm"
+                 onClick={handleSignUpClick}
+                 className="flex items-center gap-2"
+               >
+                 <UserPlus className="h-4 w-4" />
+                 Sign Up
+               </Button>
             </div>
           )}
         </div>
