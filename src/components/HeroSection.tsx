@@ -41,7 +41,7 @@ interface HeroSectionProps {
 }
 
 export default function HeroSection({ onRoleSelect }: HeroSectionProps) {
-  const { user, signOut, loading } = useAuth();
+  const { user, profile, signOut, loading } = useAuth();
   const navigate = useNavigate();
   
   console.log('HeroSection render:', { user, loading });
@@ -168,63 +168,80 @@ export default function HeroSection({ onRoleSelect }: HeroSectionProps) {
           </div>
         </div>
 
-        {/* Role Selection Cards - Only show if authenticated */}
-        {user && (
+        {/* Role Selection Cards - Only show for non-authenticated users */}
+        {!user && (
           <div className="mb-16">
             <h2 className="text-4xl font-bold text-center mb-12 font-heading">
               Choose Your <span className="gradient-text">Role</span>
             </h2>
-          
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-            {userRoles.map((role, index) => {
-              const IconComponent = role.icon;
-              return (
-                <Card 
-                  key={role.title}
-                  className="interactive-card glass-card p-6 group cursor-pointer h-full"
-                  onClick={() => onRoleSelect(role.title.toLowerCase())}
-                  style={{animationDelay: `${index * 0.1}s`}}
-                >
-                  <div className="text-center h-full flex flex-col">
-                    <div className="mb-4">
-                      <div className={`w-16 h-16 mx-auto rounded-2xl bg-${role.color} bg-opacity-10 flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                        <IconComponent className={`w-8 h-8 text-${role.color}`} />
-                      </div>
-                    </div>
-                    
-                    <h3 className="text-2xl font-bold mb-3 group-hover:gradient-text transition-all">
-                      {role.title}
-                    </h3>
-                    
-                    <p className="text-muted-foreground mb-4 flex-grow text-sm leading-relaxed">
-                      {role.description}
-                    </p>
-                    
-                    <div className="space-y-2">
-                      {role.features.slice(0, 3).map((feature, idx) => (
-                        <div key={idx} className="flex items-center text-xs text-muted-foreground">
-                          <div className="w-1.5 h-1.5 bg-primary rounded-full mr-2"></div>
-                          {feature}
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+              {userRoles.map((role, index) => {
+                const IconComponent = role.icon;
+                return (
+                  <Card 
+                    key={role.title}
+                    className="interactive-card glass-card p-6 group cursor-pointer h-full"
+                    onClick={() => onRoleSelect(role.title.toLowerCase().replace(' ', ''))}
+                    style={{animationDelay: `${index * 0.1}s`}}
+                  >
+                    <div className="text-center h-full flex flex-col">
+                      <div className="mb-4">
+                        <div className={`w-16 h-16 mx-auto rounded-2xl bg-${role.color} bg-opacity-10 flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                          <IconComponent className={`w-8 h-8 text-${role.color}`} />
                         </div>
-                      ))}
-                      {role.features.length > 3 && (
-                        <div className="text-xs text-primary">+{role.features.length - 3} more</div>
-                      )}
+                      </div>
+                      
+                      <h3 className="text-2xl font-bold mb-3 group-hover:gradient-text transition-all">
+                        {role.title}
+                      </h3>
+                      
+                      <p className="text-muted-foreground mb-4 flex-grow text-sm leading-relaxed">
+                        {role.description}
+                      </p>
+                      
+                      <div className="space-y-2">
+                        {role.features.slice(0, 3).map((feature, idx) => (
+                          <div key={idx} className="flex items-center text-xs text-muted-foreground">
+                            <div className="w-1.5 h-1.5 bg-primary rounded-full mr-2"></div>
+                            {feature}
+                          </div>
+                        ))}
+                        {role.features.length > 3 && (
+                          <div className="text-xs text-primary">+{role.features.length - 3} more</div>
+                        )}
+                      </div>
+                      
+                      <Button 
+                        variant="ghost" 
+                        className="mt-4 w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all"
+                      >
+                        Enter Dashboard
+                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
+                      </Button>
                     </div>
-                    
-                    <Button 
-                      variant="ghost" 
-                      className="mt-4 w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all"
-                    >
-                      Enter Dashboard
-                      <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                    </Button>
-                  </div>
-                </Card>
-              );
-            })}
+                  </Card>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
+
+        {/* Message for authenticated users */}
+        {user && profile && (
+          <div className="mb-16 text-center">
+            <div className="glass-card p-8 max-w-2xl mx-auto">
+              <h2 className="text-3xl font-bold mb-4 font-heading">
+                Welcome back{profile?.full_name ? `, ${profile.full_name}` : ''}!
+              </h2>
+              <p className="text-xl text-muted-foreground mb-4">
+                You are logged in as a <span className="font-semibold gradient-text capitalize">{profile.role}</span>
+              </p>
+              <p className="text-sm text-muted-foreground">
+                You will be automatically redirected to your {profile.role} dashboard.
+              </p>
+            </div>
+          </div>
         )}
 
         {/* Features Preview */}
