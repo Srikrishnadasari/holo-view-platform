@@ -79,7 +79,7 @@ export default function HeroSection({ onRoleSelect }: HeroSectionProps) {
   return (
     <div className="min-h-screen bg-gradient-hero relative overflow-hidden">
       {/* Animated Background Elements */}
-      <div className="absolute inset-0 opacity-10">
+      <div className="absolute inset-0 opacity-10 pointer-events-none">
         <div className="floating absolute top-20 left-10 w-8 h-8 bg-primary rounded-full"></div>
         <div className="floating absolute top-40 right-20 w-6 h-6 bg-secondary rounded-full" style={{animationDelay: '1s'}}></div>
         <div className="floating absolute bottom-40 left-20 w-10 h-10 bg-accent rounded-full" style={{animationDelay: '2s'}}></div>
