@@ -40,19 +40,19 @@ const Index = () => {
   }
 
   if (selectedRole === "alumni") {
-    return <AlumniDashboard onBack={handleBackToHome} />;
+    return <AlumniDashboard />;
   }
 
   if (selectedRole === "student") {
-    return <StudentsDashboard onBack={handleBackToHome} />;
+    return <StudentsDashboard />;
   }
 
   if (selectedRole === "faculty") {
-    return <FacultyDashboard onBack={handleBackToHome} />;
+    return <FacultyDashboard />;
   }
 
   if (selectedRole === "admin") {
-    return <AdminDashboard onBack={handleBackToHome} />;
+    return <AdminDashboard />;
   }
 
   return <HeroSection onRoleSelect={handleRoleSelect} />;

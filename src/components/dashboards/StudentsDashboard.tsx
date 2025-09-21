@@ -4,6 +4,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
 import { 
   Search, 
   Calendar, 
@@ -17,14 +19,14 @@ import {
   MessageCircle,
   TrendingUp,
   Award,
-  GraduationCap
+  GraduationCap,
+  LogOut,
+  Settings,
+  ChevronDown
 } from "lucide-react";
 
-interface StudentsDashboardProps {
-  onBack: () => void;
-}
-
-export default function StudentsDashboard({ onBack }: StudentsDashboardProps) {
+export default function StudentsDashboard() {
+  const { signOut, profile, user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
 
   const stats = [
@@ -123,27 +125,43 @@ export default function StudentsDashboard({ onBack }: StudentsDashboardProps) {
       <div className="container mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex items-center justify-between mb-8">
-          <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={onBack} className="text-muted-foreground">
-              ← Back to Home
-            </Button>
-            <div className="h-8 w-px bg-border"></div>
-            <div>
-              <h1 className="text-3xl font-bold gradient-text">Student Dashboard</h1>
-              <p className="text-muted-foreground">Welcome back, Arjun Kumar</p>
-            </div>
+          <div>
+            <h1 className="text-3xl font-bold gradient-text">Student Dashboard</h1>
+            <p className="text-muted-foreground">Welcome back, {profile?.full_name || user?.email}</p>
           </div>
           
-          <div className="flex items-center gap-4">
-            <Avatar className="h-12 w-12 ring-2 ring-primary ring-offset-2">
-              <AvatarImage src="/api/placeholder/48/48" />
-              <AvatarFallback>AK</AvatarFallback>
-            </Avatar>
-            <div className="text-right">
-              <p className="font-semibold">Arjun Kumar</p>
-              <p className="text-sm text-muted-foreground">3rd Year, Computer Science</p>
-            </div>
-          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" className="flex items-center gap-2 h-auto p-2">
+                <Avatar className="h-10 w-10 ring-2 ring-primary ring-offset-2">
+                  <AvatarImage src="/api/placeholder/40/40" />
+                  <AvatarFallback>{profile?.full_name?.split(' ').map(n => n[0]).join('') || 'U'}</AvatarFallback>
+                </Avatar>
+                <div className="text-right">
+                  <p className="font-semibold text-sm">{profile?.full_name || 'User'}</p>
+                  <p className="text-xs text-muted-foreground">{user?.email}</p>
+                </div>
+                <ChevronDown className="h-4 w-4 text-muted-foreground" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-64 bg-background border border-border">
+              <div className="px-3 py-2">
+                <p className="font-medium">{profile?.full_name || 'User'}</p>
+                <p className="text-sm text-muted-foreground">{user?.email}</p>
+                <Badge variant="secondary" className="mt-1">Student</Badge>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem>
+                <Settings className="mr-2 h-4 w-4" />
+                Profile Settings
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem onClick={signOut} className="text-destructive">
+                <LogOut className="mr-2 h-4 w-4" />
+                Sign Out
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
 
         {/* Stats Cards */}
