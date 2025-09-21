@@ -5,42 +5,8 @@ import heroImage from "@/assets/hero-alumni-platform.jpg";
 import { useAuth } from "@/contexts/AuthContext";
 import { useNavigate } from "react-router-dom";
 
-const userRoles = [
-  {
-    title: "Alumni",
-    description: "Share achievements, mentor students, contribute donations, and create events",
-    icon: GraduationCap,
-    color: "primary",
-    features: ["Update Profile", "Share Achievements", "Mentor Students", "Contribute Donations", "Create Events"]
-  },
-  {
-    title: "Students", 
-    description: "Seek mentorship, apply for internships, and attend alumni events",
-    icon: Users,
-    color: "secondary",
-    features: ["Seek Mentorship", "Apply for Internships", "Attend Alumni Events"]
-  },
-  {
-    title: "Faculty",
-    description: "Coordinate with alumni and students for better engagement",
-    icon: UserCheck,
-    color: "accent",
-    features: ["Coordinate Activities", "Bridge Alumni-Student Gap", "Academic Support"]
-  },
-  {
-    title: "College Admin",
-    description: "Manage alumni database, approve interactions, and generate reports",
-    icon: Building,
-    color: "muted",
-    features: ["Manage Alumni Database", "Approve Interactions", "Manage Events", "Generate Reports"]
-  }
-];
 
-interface HeroSectionProps {
-  onRoleSelect: (role: string) => void;
-}
-
-export default function HeroSection({ onRoleSelect }: HeroSectionProps) {
+export default function HeroSection() {
   const { user, profile, signOut, loading } = useAuth();
   const navigate = useNavigate();
   
@@ -168,64 +134,6 @@ export default function HeroSection({ onRoleSelect }: HeroSectionProps) {
           </div>
         </div>
 
-        {/* Role Selection Cards - Only show for non-authenticated users */}
-        {!user && (
-          <div className="mb-16">
-            <h2 className="text-4xl font-bold text-center mb-12 font-heading">
-              Choose Your <span className="gradient-text">Role</span>
-            </h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
-              {userRoles.map((role, index) => {
-                const IconComponent = role.icon;
-                return (
-                  <Card 
-                    key={role.title}
-                    className="interactive-card glass-card p-6 group cursor-pointer h-full"
-                    onClick={() => onRoleSelect(role.title.toLowerCase().replace(' ', ''))}
-                    style={{animationDelay: `${index * 0.1}s`}}
-                  >
-                    <div className="text-center h-full flex flex-col">
-                      <div className="mb-4">
-                        <div className={`w-16 h-16 mx-auto rounded-2xl bg-${role.color} bg-opacity-10 flex items-center justify-center group-hover:scale-110 transition-transform`}>
-                          <IconComponent className={`w-8 h-8 text-${role.color}`} />
-                        </div>
-                      </div>
-                      
-                      <h3 className="text-2xl font-bold mb-3 group-hover:gradient-text transition-all">
-                        {role.title}
-                      </h3>
-                      
-                      <p className="text-muted-foreground mb-4 flex-grow text-sm leading-relaxed">
-                        {role.description}
-                      </p>
-                      
-                      <div className="space-y-2">
-                        {role.features.slice(0, 3).map((feature, idx) => (
-                          <div key={idx} className="flex items-center text-xs text-muted-foreground">
-                            <div className="w-1.5 h-1.5 bg-primary rounded-full mr-2"></div>
-                            {feature}
-                          </div>
-                        ))}
-                        {role.features.length > 3 && (
-                          <div className="text-xs text-primary">+{role.features.length - 3} more</div>
-                        )}
-                      </div>
-                      
-                      <Button 
-                        variant="ghost" 
-                        className="mt-4 w-full group-hover:bg-primary group-hover:text-primary-foreground transition-all"
-                      >
-                        Enter Dashboard
-                        <ArrowRight className="ml-2 h-4 w-4 group-hover:translate-x-1 transition-transform" />
-                      </Button>
-                    </div>
-                  </Card>
-                );
-              })}
-            </div>
-          </div>
-        )}
 
         {/* Message for authenticated users */}
         {user && profile && (

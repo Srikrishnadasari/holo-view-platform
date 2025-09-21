@@ -8,27 +8,6 @@ import AdminDashboard from "@/components/dashboards/AdminDashboard";
 
 const Index = () => {
   const { user, profile, loading } = useAuth();
-  const [selectedRole, setSelectedRole] = useState<string | null>(null);
-
-  // Automatically set role based on user profile
-  useEffect(() => {
-    if (user && profile) {
-      setSelectedRole(profile.role);
-    } else if (!user) {
-      setSelectedRole(null);
-    }
-  }, [user, profile]);
-
-  const handleRoleSelect = (role: string) => {
-    // Only allow role selection if user is not authenticated
-    if (!user) {
-      setSelectedRole(role);
-    }
-  };
-
-  const handleBackToHome = () => {
-    setSelectedRole(null);
-  };
 
   // Show loading state while checking authentication
   if (loading) {
@@ -39,23 +18,23 @@ const Index = () => {
     );
   }
 
-  if (selectedRole === "alumni") {
-    return <AlumniDashboard />;
+  // Show appropriate dashboard for authenticated users
+  if (user && profile) {
+    if (profile.role === "alumni") {
+      return <AlumniDashboard />;
+    }
+    if (profile.role === "student") {
+      return <StudentsDashboard />;
+    }
+    if (profile.role === "faculty") {
+      return <FacultyDashboard />;
+    }
+    if (profile.role === "admin") {
+      return <AdminDashboard />;
+    }
   }
 
-  if (selectedRole === "student") {
-    return <StudentsDashboard />;
-  }
-
-  if (selectedRole === "faculty") {
-    return <FacultyDashboard />;
-  }
-
-  if (selectedRole === "admin") {
-    return <AdminDashboard />;
-  }
-
-  return <HeroSection onRoleSelect={handleRoleSelect} />;
+  return <HeroSection />;
 };
 
 export default Index;
