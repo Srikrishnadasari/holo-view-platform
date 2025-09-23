@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -6,6 +6,12 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Progress } from "@/components/ui/progress";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useAuth } from "@/contexts/AuthContext";
+import FindMentorsModal from "@/components/modals/FindMentorsModal";
+import ApplyInternshipModal from "@/components/modals/ApplyInternshipModal";
+import JoinEventsModal from "@/components/modals/JoinEventsModal";
+import MessagingModal from "@/components/modals/MessagingModal";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 import { 
   Search, 
   Calendar, 
@@ -28,6 +34,54 @@ import {
 export default function StudentsDashboard() {
   const { signOut, profile, user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
+  const [showFindMentors, setShowFindMentors] = useState(false);
+  const [showApplyInternship, setShowApplyInternship] = useState(false);
+  const [showJoinEvents, setShowJoinEvents] = useState(false);
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [selectedMentor, setSelectedMentor] = useState<{id: string, name: string} | null>(null);
+  const [mentors, setMentors] = useState<any[]>([]);
+  const [internships, setInternships] = useState<any[]>([]);
+  const [events, setEvents] = useState<any[]>([]);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      // Fetch mentors
+      const { data: mentorsData } = await supabase
+        .from('mentors')
+        .select('*')
+        .eq('available', true)
+        .limit(3);
+      
+      // Fetch internships
+      const { data: internshipsData } = await supabase
+        .from('internships')
+        .select('*')
+        .eq('active', true)
+        .limit(3);
+      
+      // Fetch events
+      const { data: eventsData } = await supabase
+        .from('events')
+        .select('*')
+        .eq('active', true)
+        .limit(3);
+
+      setMentors(mentorsData || []);
+      setInternships(internshipsData || []);
+      setEvents(eventsData || []);
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    }
+  };
+
+  const handleMessageMentor = (mentorId: string, mentorName: string) => {
+    setSelectedMentor({ id: mentorId, name: mentorName });
+    setShowMessaging(true);
+  };
 
   const stats = [
     { title: "Active Mentorships", value: "3", icon: Users, color: "primary", trend: "+1" },
@@ -36,89 +90,6 @@ export default function StudentsDashboard() {
     { title: "Skills Learned", value: "15", icon: BookOpen, color: "muted", trend: "+3" }
   ];
 
-  const mentors = [
-    { 
-      name: "Dr. Sarah Chen", 
-      company: "Microsoft", 
-      role: "Senior Data Scientist",
-      expertise: "Machine Learning",
-      rating: 4.9,
-      sessions: 8,
-      nextSession: "Tomorrow 3:00 PM"
-    },
-    { 
-      name: "Raj Patel", 
-      company: "Amazon", 
-      role: "Software Engineer",
-      expertise: "Full Stack Development",
-      rating: 4.8,
-      sessions: 5,
-      nextSession: "Friday 5:00 PM"
-    },
-    { 
-      name: "Lisa Wang", 
-      company: "Apple", 
-      role: "UX Designer",
-      expertise: "Product Design",
-      rating: 4.9,
-      sessions: 3,
-      nextSession: "Next Week"
-    }
-  ];
-
-  const internships = [
-    {
-      company: "Google",
-      role: "Software Engineering Intern",
-      location: "Bangalore",
-      duration: "3 months",
-      stipend: "₹50,000/month",
-      deadline: "2024-10-15",
-      applied: true
-    },
-    {
-      company: "Microsoft",
-      role: "Data Science Intern",
-      location: "Hyderabad",
-      duration: "6 months",
-      stipend: "₹45,000/month",
-      deadline: "2024-10-20",
-      applied: false
-    },
-    {
-      company: "Amazon",
-      role: "Product Management Intern",
-      location: "Mumbai",
-      duration: "4 months",
-      stipend: "₹55,000/month",
-      deadline: "2024-10-25",
-      applied: false
-    }
-  ];
-
-  const upcomingEvents = [
-    {
-      title: "Tech Talk: Future of AI",
-      speaker: "Dr. Priya Sharma (Google AI)",
-      date: "Oct 25, 2024",
-      time: "6:00 PM",
-      type: "Virtual"
-    },
-    {
-      title: "Alumni Networking Meet",
-      speaker: "Multiple Alumni",
-      date: "Nov 2, 2024",
-      time: "4:00 PM",
-      type: "In-Person"
-    },
-    {
-      title: "Career Guidance Workshop",
-      speaker: "HR Leaders Panel",
-      date: "Nov 8, 2024",
-      time: "5:30 PM",
-      type: "Hybrid"
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-hero">
@@ -201,15 +172,27 @@ export default function StudentsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <Button variant="outline" className="h-auto p-4 flex flex-col gap-2 group">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col gap-2 group"
+                    onClick={() => setShowFindMentors(true)}
+                  >
                     <Search className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
                     <span className="text-sm">Find Mentors</span>
                   </Button>
-                  <Button variant="outline" className="h-auto p-4 flex flex-col gap-2 group">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col gap-2 group"
+                    onClick={() => setShowApplyInternship(true)}
+                  >
                     <Briefcase className="w-8 h-8 text-secondary group-hover:scale-110 transition-transform" />
                     <span className="text-sm">Apply Internships</span>
                   </Button>
-                  <Button variant="outline" className="h-auto p-4 flex flex-col gap-2 group">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col gap-2 group"
+                    onClick={() => setShowJoinEvents(true)}
+                  >
                     <Calendar className="w-8 h-8 text-accent group-hover:scale-110 transition-transform" />
                     <span className="text-sm">Join Events</span>
                   </Button>
@@ -235,8 +218,8 @@ export default function StudentsDashboard() {
                           <h4 className="font-semibold text-lg">{internship.role}</h4>
                           <p className="text-primary font-medium">{internship.company}</p>
                         </div>
-                        <Badge variant={internship.applied ? "default" : "outline"}>
-                          {internship.applied ? "Applied" : "Apply Now"}
+                        <Badge variant="outline">
+                          Apply
                         </Badge>
                       </div>
                       
@@ -261,11 +244,10 @@ export default function StudentsDashboard() {
                       
                       <div className="flex gap-2">
                         <Button 
-                          size="sm" 
-                          disabled={internship.applied}
-                          className={internship.applied ? "opacity-50" : ""}
+                          size="sm"
+                          onClick={() => setShowApplyInternship(true)}
                         >
-                          {internship.applied ? "Applied" : "Apply Now"}
+                          Apply Now
                         </Button>
                         <Button variant="outline" size="sm">
                           View Details
@@ -314,7 +296,12 @@ export default function StudentsDashboard() {
                           <p className="text-xs text-accent mt-1">{mentor.nextSession}</p>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" className="w-full mt-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full mt-3"
+                        onClick={() => handleMessageMentor(mentor.id, mentor.name)}
+                      >
                         <MessageCircle className="w-3 h-3 mr-1" />
                         Message
                       </Button>
@@ -335,7 +322,7 @@ export default function StudentsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {upcomingEvents.map((event, index) => (
+                  {events.map((event, index) => (
                     <div key={index} className="p-3 glass-card rounded-lg">
                       <div className="flex items-start justify-between mb-2">
                         <h4 className="font-medium text-sm">{event.title}</h4>
@@ -345,10 +332,15 @@ export default function StudentsDashboard() {
                       </div>
                       <p className="text-xs text-muted-foreground mb-1">{event.speaker}</p>
                       <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>{event.date}</span>
-                        <span>{event.time}</span>
+                        <span>{new Date(event.date).toLocaleDateString()}</span>
+                        <span>{new Date(`1970-01-01T${event.time}`).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}</span>
                       </div>
-                      <Button variant="outline" size="sm" className="w-full mt-3 text-xs">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full mt-3 text-xs"
+                        onClick={() => setShowJoinEvents(true)}
+                      >
                         Register Now
                       </Button>
                     </div>
@@ -391,6 +383,28 @@ export default function StudentsDashboard() {
             </Card>
           </div>
         </div>
+
+        {/* Modals */}
+        <FindMentorsModal 
+          open={showFindMentors} 
+          onOpenChange={setShowFindMentors} 
+        />
+        <ApplyInternshipModal 
+          open={showApplyInternship} 
+          onOpenChange={setShowApplyInternship} 
+        />
+        <JoinEventsModal 
+          open={showJoinEvents} 
+          onOpenChange={setShowJoinEvents} 
+        />
+        {selectedMentor && (
+          <MessagingModal 
+            open={showMessaging} 
+            onOpenChange={setShowMessaging}
+            mentorId={selectedMentor.id}
+            mentorName={selectedMentor.name}
+          />
+        )}
       </div>
     </div>
   );
