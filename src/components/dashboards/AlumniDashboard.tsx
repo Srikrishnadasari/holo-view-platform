@@ -1,4 +1,38 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Progress } from "@/components/ui/progress";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { useAuth } from "@/contexts/AuthContext";
+import { 
+  User, 
+  Trophy, 
+  Users, 
+  DollarSign, 
+  Calendar, 
+  MessageSquare, 
+  TrendingUp,
+  Star,
+  Heart,
+  Share2,
+  Award,
+  Briefcase,
+  BookOpen,
+  Phone,
+  LogOut,
+  Settings,
+  ChevronDown,
+  CheckCircle,
+  X
+} from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import UpdateProfileModal from "@/components/modals/UpdateProfileModal";
+import ShareAchievementModal from "@/components/modals/ShareAchievementModal";
+import CreateEventModal from "@/components/modals/CreateEventModal";
+import MessagingModal from "@/components/modals/MessagingModal";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -29,6 +63,78 @@ import {
 export default function AlumniDashboard() {
   const { signOut, profile, user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
+  const [mentorApplications, setMentorApplications] = useState<any[]>([]);
+  const [achievements, setAchievements] = useState<any[]>([]);
+  const [showUpdateProfile, setShowUpdateProfile] = useState(false);
+  const [showShareAchievement, setShowShareAchievement] = useState(false);
+  const [showCreateEvent, setShowCreateEvent] = useState(false);
+  const [showMessaging, setShowMessaging] = useState(false);
+  const { toast } = useToast();
+
+  useEffect(() => {
+    if (user) {
+      fetchMentorApplications();
+      fetchAchievements();
+    }
+  }, [user]);
+
+  const fetchMentorApplications = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('mentor_applications')
+        .select(`
+          *,
+          profiles!mentor_applications_student_id_fkey(full_name)
+        `)
+        .eq('mentor_id', user.id)
+        .eq('status', 'pending');
+      
+      setMentorApplications(data || []);
+    } catch (error) {
+      console.error('Error fetching applications:', error);
+    }
+  };
+
+  const fetchAchievements = async () => {
+    if (!user) return;
+    try {
+      const { data } = await supabase
+        .from('achievements')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+      
+      setAchievements(data || []);
+    } catch (error) {
+      console.error('Error fetching achievements:', error);
+    }
+  };
+
+  const handleMentorApplication = async (applicationId: string, status: 'accepted' | 'rejected') => {
+    try {
+      const { error } = await supabase
+        .from('mentor_applications')
+        .update({ status })
+        .eq('id', applicationId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Application ${status} successfully!`,
+      });
+      
+      fetchMentorApplications();
+    } catch (error) {
+      console.error('Error updating application:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update application",
+        variant: "destructive"
+      });
+    }
+  };
 
   const stats = [
     { title: "Students Mentored", value: "24", icon: Users, color: "primary", trend: "+12%" },
@@ -132,19 +238,35 @@ export default function AlumniDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Button variant="outline" className="h-auto p-4 flex flex-col gap-2 group">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col gap-2 group"
+                    onClick={() => setShowUpdateProfile(true)}
+                  >
                     <User className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
                     <span className="text-sm">Update Profile</span>
                   </Button>
-                  <Button variant="outline" className="h-auto p-4 flex flex-col gap-2 group">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col gap-2 group"
+                    onClick={() => setShowShareAchievement(true)}
+                  >
                     <Trophy className="w-8 h-8 text-secondary group-hover:scale-110 transition-transform" />
                     <span className="text-sm">Share Achievement</span>
                   </Button>
-                  <Button variant="outline" className="h-auto p-4 flex flex-col gap-2 group">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col gap-2 group"
+                    onClick={() => setShowMessaging(true)}
+                  >
                     <Users className="w-8 h-8 text-accent group-hover:scale-110 transition-transform" />
                     <span className="text-sm">Find Mentees</span>
                   </Button>
-                  <Button variant="outline" className="h-auto p-4 flex flex-col gap-2 group">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col gap-2 group"
+                    onClick={() => setShowCreateEvent(true)}
+                  >
                     <Calendar className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
                     <span className="text-sm">Create Event</span>
                   </Button>
@@ -163,8 +285,8 @@ export default function AlumniDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {achievements.map((achievement, index) => (
-                    <div key={index} className="flex items-start gap-4 p-4 glass-card rounded-lg interactive-card">
+                  {achievements.length > 0 ? achievements.map((achievement, index) => (
+                    <div key={achievement.id || index} className="flex items-start gap-4 p-4 glass-card rounded-lg interactive-card">
                       <div className="w-10 h-10 rounded-lg bg-primary bg-opacity-10 flex items-center justify-center">
                         {achievement.type === 'career' && <Briefcase className="w-5 h-5 text-primary" />}
                         {achievement.type === 'academic' && <BookOpen className="w-5 h-5 text-primary" />}
@@ -173,15 +295,30 @@ export default function AlumniDashboard() {
                       </div>
                       <div className="flex-grow">
                         <h4 className="font-semibold">{achievement.title}</h4>
-                        <p className="text-sm text-muted-foreground">{achievement.date}</p>
+                        <p className="text-sm text-muted-foreground">{new Date(achievement.created_at).getFullYear()}</p>
+                        {achievement.description && (
+                          <p className="text-sm text-muted-foreground mt-1">{achievement.description}</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-sm text-muted-foreground">
                         <Heart className="w-4 h-4" />
-                        {achievement.likes}
+                        {achievement.likes || 0}
                         <Share2 className="w-4 h-4 ml-2 cursor-pointer hover:text-primary" />
                       </div>
                     </div>
-                  ))}
+                  )) : (
+                    <div className="text-center py-8 text-muted-foreground">
+                      <Trophy className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                      <p>No achievements shared yet</p>
+                      <Button 
+                        variant="outline" 
+                        className="mt-2"
+                        onClick={() => setShowShareAchievement(true)}
+                      >
+                        Share Your First Achievement
+                      </Button>
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>
@@ -252,6 +389,12 @@ export default function AlumniDashboard() {
             </Card>
           </div>
         </div>
+
+        {/* Modals */}
+        <UpdateProfileModal open={showUpdateProfile} onOpenChange={setShowUpdateProfile} />
+        <ShareAchievementModal open={showShareAchievement} onOpenChange={setShowShareAchievement} />
+        <CreateEventModal open={showCreateEvent} onOpenChange={setShowCreateEvent} />
+        <MessagingModal open={showMessaging} onOpenChange={setShowMessaging} />
       </div>
     </div>
   );

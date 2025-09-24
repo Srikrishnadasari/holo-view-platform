@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -24,101 +24,88 @@ import {
   Settings,
   ChevronDown
 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useToast } from "@/hooks/use-toast";
+import FindMentorsModal from "@/components/modals/FindMentorsModal";
+import ApplyInternshipModal from "@/components/modals/ApplyInternshipModal";
+import JoinEventsModal from "@/components/modals/JoinEventsModal";
+import MessagingModal from "@/components/modals/MessagingModal";
 
 export default function StudentsDashboard() {
   const { signOut, profile, user } = useAuth();
   const [activeTab, setActiveTab] = useState("overview");
+  const [mentors, setMentors] = useState<any[]>([]);
+  const [internships, setInternships] = useState<any[]>([]);
+  const [upcomingEvents, setUpcomingEvents] = useState<any[]>([]);
+  const [mentorshipApplications, setMentorshipApplications] = useState<any[]>([]);
+  const [showFindMentors, setShowFindMentors] = useState(false);
+  const [showApplyInternship, setShowApplyInternship] = useState(false);
+  const [showJoinEvents, setShowJoinEvents] = useState(false);
+  const [showMessaging, setShowMessaging] = useState(false);
+  const [selectedMentorId, setSelectedMentorId] = useState<string | undefined>();
+  const [selectedMentorName, setSelectedMentorName] = useState<string | undefined>();
+  const { toast } = useToast();
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, [user]);
+
+  const fetchDashboardData = async () => {
+    if (!user) return;
+
+    try {
+      // Fetch mentorship applications
+      const { data: applications } = await supabase
+        .from('mentor_applications')
+        .select(`
+          *,
+          mentors (name, company, role, user_id)
+        `)
+        .eq('student_id', user.id)
+        .eq('status', 'accepted');
+
+      setMentorshipApplications(applications || []);
+      setMentors(applications?.map(app => app.mentors).filter(Boolean) || []);
+
+      // Fetch available internships (sample)
+      const { data: internshipsData } = await supabase
+        .from('internships')
+        .select('*')
+        .eq('active', true)
+        .limit(3);
+
+      setInternships(internshipsData || []);
+
+      // Fetch upcoming events
+      const { data: eventsData } = await supabase
+        .from('events')
+        .select('*')
+        .eq('active', true)
+        .gte('date', new Date().toISOString().split('T')[0])
+        .order('date', { ascending: true })
+        .limit(3);
+
+      setUpcomingEvents(eventsData || []);
+
+    } catch (error) {
+      console.error('Error fetching dashboard data:', error);
+    }
+  };
 
   const stats = [
-    { title: "Active Mentorships", value: "3", icon: Users, color: "primary", trend: "+1" },
+    { title: "Active Mentorships", value: mentors.length.toString(), icon: Users, color: "primary", trend: "+1" },
     { title: "Internship Applications", value: "8", icon: Briefcase, color: "secondary", trend: "+2" },
     { title: "Events Attended", value: "12", icon: Calendar, color: "accent", trend: "+4" },
     { title: "Skills Learned", value: "15", icon: BookOpen, color: "muted", trend: "+3" }
   ];
 
-  const mentors = [
-    { 
-      name: "Dr. Sarah Chen", 
-      company: "Microsoft", 
-      role: "Senior Data Scientist",
-      expertise: "Machine Learning",
-      rating: 4.9,
-      sessions: 8,
-      nextSession: "Tomorrow 3:00 PM"
-    },
-    { 
-      name: "Raj Patel", 
-      company: "Amazon", 
-      role: "Software Engineer",
-      expertise: "Full Stack Development",
-      rating: 4.8,
-      sessions: 5,
-      nextSession: "Friday 5:00 PM"
-    },
-    { 
-      name: "Lisa Wang", 
-      company: "Apple", 
-      role: "UX Designer",
-      expertise: "Product Design",
-      rating: 4.9,
-      sessions: 3,
-      nextSession: "Next Week"
-    }
-  ];
+  const handleMessageMentor = (mentorId: string, mentorName: string) => {
+    setSelectedMentorId(mentorId);
+    setSelectedMentorName(mentorName);
+    setShowMessaging(true);
+  };
 
-  const internships = [
-    {
-      company: "Google",
-      role: "Software Engineering Intern",
-      location: "Bangalore",
-      duration: "3 months",
-      stipend: "₹50,000/month",
-      deadline: "2024-10-15",
-      applied: true
-    },
-    {
-      company: "Microsoft",
-      role: "Data Science Intern",
-      location: "Hyderabad",
-      duration: "6 months",
-      stipend: "₹45,000/month",
-      deadline: "2024-10-20",
-      applied: false
-    },
-    {
-      company: "Amazon",
-      role: "Product Management Intern",
-      location: "Mumbai",
-      duration: "4 months",
-      stipend: "₹55,000/month",
-      deadline: "2024-10-25",
-      applied: false
-    }
-  ];
 
-  const upcomingEvents = [
-    {
-      title: "Tech Talk: Future of AI",
-      speaker: "Dr. Priya Sharma (Google AI)",
-      date: "Oct 25, 2024",
-      time: "6:00 PM",
-      type: "Virtual"
-    },
-    {
-      title: "Alumni Networking Meet",
-      speaker: "Multiple Alumni",
-      date: "Nov 2, 2024",
-      time: "4:00 PM",
-      type: "In-Person"
-    },
-    {
-      title: "Career Guidance Workshop",
-      speaker: "HR Leaders Panel",
-      date: "Nov 8, 2024",
-      time: "5:30 PM",
-      type: "Hybrid"
-    }
-  ];
 
   return (
     <div className="min-h-screen bg-gradient-hero">
@@ -201,15 +188,27 @@ export default function StudentsDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                  <Button variant="outline" className="h-auto p-4 flex flex-col gap-2 group">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col gap-2 group"
+                    onClick={() => setShowFindMentors(true)}
+                  >
                     <Search className="w-8 h-8 text-primary group-hover:scale-110 transition-transform" />
                     <span className="text-sm">Find Mentors</span>
                   </Button>
-                  <Button variant="outline" className="h-auto p-4 flex flex-col gap-2 group">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col gap-2 group"
+                    onClick={() => setShowApplyInternship(true)}
+                  >
                     <Briefcase className="w-8 h-8 text-secondary group-hover:scale-110 transition-transform" />
                     <span className="text-sm">Apply Internships</span>
                   </Button>
-                  <Button variant="outline" className="h-auto p-4 flex flex-col gap-2 group">
+                  <Button 
+                    variant="outline" 
+                    className="h-auto p-4 flex flex-col gap-2 group"
+                    onClick={() => setShowJoinEvents(true)}
+                  >
                     <Calendar className="w-8 h-8 text-accent group-hover:scale-110 transition-transform" />
                     <span className="text-sm">Join Events</span>
                   </Button>
@@ -314,7 +313,12 @@ export default function StudentsDashboard() {
                           <p className="text-xs text-accent mt-1">{mentor.nextSession}</p>
                         </div>
                       </div>
-                      <Button variant="outline" size="sm" className="w-full mt-3">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full mt-3"
+                        onClick={() => handleMessageMentor(mentor.user_id, mentor.name)}
+                      >
                         <MessageCircle className="w-3 h-3 mr-1" />
                         Message
                       </Button>
@@ -348,7 +352,12 @@ export default function StudentsDashboard() {
                         <span>{event.date}</span>
                         <span>{event.time}</span>
                       </div>
-                      <Button variant="outline" size="sm" className="w-full mt-3 text-xs">
+                      <Button 
+                        variant="outline" 
+                        size="sm" 
+                        className="w-full mt-3 text-xs"
+                        onClick={() => setShowJoinEvents(true)}
+                      >
                         Register Now
                       </Button>
                     </div>
@@ -391,6 +400,17 @@ export default function StudentsDashboard() {
             </Card>
           </div>
         </div>
+
+        {/* Modals */}
+        <FindMentorsModal open={showFindMentors} onOpenChange={setShowFindMentors} />
+        <ApplyInternshipModal open={showApplyInternship} onOpenChange={setShowApplyInternship} />
+        <JoinEventsModal open={showJoinEvents} onOpenChange={setShowJoinEvents} />
+        <MessagingModal 
+          open={showMessaging} 
+          onOpenChange={setShowMessaging}
+          recipientId={selectedMentorId}
+          recipientName={selectedMentorName}
+        />
       </div>
     </div>
   );
